@@ -237,6 +237,28 @@ def tests(argv):
     print(f"Stopping Web UI process with id {proc.pid}")
     proc.kill()
 
+def download_replace():
+    taiyi_model = os.environ.get('taiyi_model', "https://huggingface.co/IDEA-CCNL/Taiyi-Stable-Diffusion-1B-Chinese-v0.1")
+    git_clone(taiyi_model, repo_dir('Taiyi-Stable-Diffusion-1B-Chinese-v0.1'), "taiyi_model")
+
+    if os.path.exists(os.getcwd()+'/repositories/stable-diffusion/configs/stable-diffusion/v1-inference.yaml'):
+        os.rename(os.getcwd()+'/repositories/stable-diffusion/configs/stable-diffusion/v1-inference.yaml', os.getcwd()+'/repositories/stable-diffusion/configs/stable-diffusion/v1-inference_backup.yaml')
+    if os.path.exists(os.getcwd()+'/repositories/stable-diffusion/ldm/modules/encoders/modules.py'):
+        os.rename(os.getcwd()+'/repositories/stable-diffusion/ldm/modules/encoders/modules.py', os.getcwd()+'/repositories/stable-diffusion/ldm/modules/encoders/modules_backup.py')
+    
+    shutil.copyfile(os.getcwd()+'/repositories/stable-diffusion-taiyi/configs/stable-diffusion/v1-inference.yaml', os.getcwd()+'/repositories/stable-diffusion/configs/stable-diffusion/v1-inference.yaml')
+
+    yaml = open(os.getcwd()+'/repositories/stable-diffusion/configs/stable-diffusion/v1-inference.yaml', 'r').readlines()
+    with open(os.getcwd()+'/repositories/stable-diffusion/configs/stable-diffusion/v1-inference.yaml', 'w') as fw:
+        for line in yaml:
+            fw.write(line.replace("version: your_path/Taiyi-Stable-Diffusion-1B-Chinese-v0.1", "version: " + os.getcwd() + "/repositories/Taiyi-Stable-Diffusion-1B-Chinese-v0.1"))
+
+    shutil.copyfile(os.getcwd()+'/repositories/stable-diffusion-taiyi/ldm/modules/encoders/modules.py',os.getcwd()+'/repositories/stable-diffusion/ldm/modules/encoders/modules.py')
+
+    os.system('cd repositories/stable-diffusion')
+    os.system('pip install -e .')
+    os.system('cd ../../')
+    
 def start():
     print(f"Launching {'API server' if '--nowebui' in sys.argv else 'Web UI'} with arguments: {' '.join(sys.argv[1:])}")
     import webui
